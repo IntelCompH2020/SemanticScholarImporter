@@ -1,1 +1,6 @@
-__pycache__
+# Ignore all sub-directories
+*/
+!dbManager/
+
+# Local configuration file
+config.cf

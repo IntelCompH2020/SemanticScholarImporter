@@ -2,7 +2,7 @@
 Datamanager for importing Semantic Scholar papers
 into a Postgres database
 
-Jul 2021
+Oct 2021
 
 @authors: Jerónimo Arenas García (jeronimo.arenas@uc3m.es)
           José Antonio Espinosa Melchor (joespino@pa.uc3m.es)
@@ -150,10 +150,15 @@ def process_paperFile(gzf):
     return [thisfile_papers, thisfile_venues, thisfile_journals, thisfile_fields]
 
 
-def process_Citations(gzf):
+def process_Citations(gzf, stype="references"):
     """
     This function takes a zfile with paper information as input
     and returns a list ready to insert in table
+
+    stype: String
+        {"references", "citations"}. Default: "references"
+        "references": paper1 cites paper2
+        "citations": paper1 is cited by paper2
     """
 
     # Get papers in file
@@ -162,9 +167,14 @@ def process_Citations(gzf):
     # Process each paper
     cite_list = []
     for paperEntry in papers_infile:
-        if len(paperEntry["outCitations"]):
-            for el in paperEntry["outCitations"]:
-                cite_list.append([paperEntry["id"], el])
+        if stype == "references":
+            if len(paperEntry["outCitations"]):
+                for el in paperEntry["outCitations"]:
+                    cite_list.append([paperEntry["id"], el])
+        else:
+            if len(paperEntry["inCitations"]):
+                for el in paperEntry["inCitations"]:
+                    cite_list.append([el, paperEntry["id"]])
     return cite_list
 
 
@@ -281,6 +291,13 @@ def get_sources(paper, stype="references"):
             Semantic Scholar unique identifier.
         stype: String
             {"references", "citations"}. Default: "references"
+            "references": paper1 cites paper2
+            "citations": paper1 is cited by paper2
+
+        Returns
+        -------
+        df_reference: DataFrame
+            Dataframe where each row is a referece/citation of the paper.
             
     """
 
@@ -332,13 +349,13 @@ def get_sources(paper, stype="references"):
                 aux["S2paperID2"] = paper
 
             # Get intents
-            def split_intents(row):
+            def split_intents(col):
                 intents = {
                     "background": [False],
                     "methodology": [False],
                     "result": [False],
                 }
-                [intents.update({el: [True]}) for el in row]
+                [intents.update({el: [True]}) for el in col]
                 return pd.DataFrame.from_dict(intents)
 
             aux[["BackgrIntent", "MethodIntent", "ResultIntent"]] = pd.concat(
@@ -359,11 +376,11 @@ def get_sources(paper, stype="references"):
             ref_list.append(aux)
 
         except Exception as e:
-            print(e)
+            # print(e)
             pass
 
     if ref_list:
-        return df_reference.append(pd.concat(ref_list), ignore_index=True)
+        return df_reference.append(pd.concat(ref_list), ignore_index=True).dropna()
     return df_reference
 
 
@@ -498,8 +515,8 @@ class S2manager:
                     populate(file_data)
                     pbar.update()
 
-    def importSources(self, ncpu, stype="references", chunksize=100000):
-        """ Imports References/Citation information """
+    def importAllSources(self, ncpu, stype="references", chunksize=100000):
+        """ Imports References/Citation information from API """
 
         print("Obtaining S2paperIDs")
 
@@ -511,13 +528,10 @@ class S2manager:
             for i in range(0, len(l), n):
                 yield l[i : i + n]
 
-        def populate(papers_references):
+        def populate(df):
             """ Aux function to insert data into database """
 
-            # Concat all references
-            df = pd.concat(papers_references)
-
-            # # Remove papers not present in database
+            # Remove papers not present in database
             df = df[df["S2paperID2"].isin(papers_set)]
 
             # Introduce new data
@@ -545,12 +559,75 @@ class S2manager:
                             papers_references.append(get_sources(paper, stype=stype))
                             pbar.update()
 
-                populate(papers_references)
+                # Concat all references
+                df_papers_references = pd.concat(papers_references)
+                if not df_papers_references.empty:
+                    populate(df_papers_references)
                 remaining = remaining - ch_size
                 chunk_bar.update()
 
-    def importCitations(self, dir_data, ncpu, chunksize=100000):
-        """ Imports Citation information """
+    # def importSourceTypes(self, ncpu, stype="references", chunksize=100000):
+    #     """ Imports References/Citation types for citations already in database """
+
+    #     print("Obtaining S2paperIDs")
+
+    #     def implode(df, by="S2paperID1", col="S2paperID2"):
+    #         """ Convert separate rows with same 'by' and multiple 'col'
+    #             to single row of one 'by' and a list of 'col' """
+    #         return df.groupby(by).agg({col: lambda x: x.tolist()}).reset_index()
+
+    #     # def chunks(l, n):
+    #     #     """Yields successive n-sized chunks from list l."""
+    #     #     for i in range(0, len(l), n):
+    #     #         yield l[i : i + n]
+
+    #     def populate(df):
+    #         """ Aux function to insert data into database
+    #             Updates previous data in table
+    #         """
+    #         # TODO: use update function from db_manager
+    #         # Update table with new data
+    #         df.to_sql("citations", self.engine, if_exists="append", index=False)
+
+    #     # Read citations table by chunks
+    #     count = 0
+    #     for chunk in pd.read_sql_table(
+    #         "citations",
+    #         self.engine,
+    #         columns=["S2paperID1", "S2paperID2"],
+    #         chunksize=chunksize,
+    #     ):
+    #         count += 1
+    #         print(f"\rProcessing chunk {count}", end="", flush=True)
+
+    #         cit_df = implode(chunk).set_index("S2paperID1")
+    #         cit_df = cit_df["S2paperID2"].to_dict()
+
+    #         papers_references = []
+    #         if ncpu:
+    #             # Parallel processing
+    #             with Pool(ncpu) as p:
+    #                 for df_sources in p.imap(
+    #                     partial(get_sources, stype=stype,), cit_df.keys()
+    #                 ):
+    #                     df_sources = df_sources.loc[
+    #                         df_sources["S2paperID2"].isin(
+    #                             cit_df[df_sources["S2paperID1"]]
+    #                         )
+    #                     ]
+    #         else:
+    #             for paper, sources in cit_df.values:
+    #                 df_sources = get_sources(paper, stype=stype)
+    #                 df_sources = df_sources.loc[df_sources["S2paperID2"].isin(sources)]
+
+    def importCitations(self, dir_data, ncpu, stype="references", chunksize=100000):
+        """ Imports Citation information from zip files.
+        
+        stype: String
+            {"references", "citations"}. Default: "references"
+            "references": paper1 cites paper2
+            "citations": paper1 is cited by paper2
+        """
 
         print("Obtaining S2paperIDs")
 
@@ -581,14 +658,16 @@ class S2manager:
             # Parallel processing
             with tqdm(total=len(gz_files), leave=None) as pbar:
                 with Pool(ncpu) as p:
-                    for cite_list in p.imap(process_Citations, gz_files):
+                    for cite_list in p.imap(
+                        partial(process_Citations, stype=stype,), gz_files
+                    ):
                         populate(cite_list)
                         pbar.update()
 
         else:
             with tqdm(total=len(gz_files), leave=None) as pbar:
                 for gzf in gz_files:
-                    cite_list = process_Citations(gzf)
+                    cite_list = process_Citations(gzf, stype)
                     populate(cite_list)
                     pbar.update()
 
@@ -717,7 +796,7 @@ class S2manager:
 
                 chunk_bar.update()
 
-    def importAuthors(self, dir_data, ncpu):
+    def importAuthorship(self, dir_data, ncpu):
         """ Imports Authorship information (paper-author data) """
 
         print("Processing paper-authors information")

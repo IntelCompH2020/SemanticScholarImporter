@@ -5,11 +5,11 @@
 # dbport:   Port
 # dbname:   Database name
 
-dbuser = postgres
-dbpass = root
-dbhost = localhost
-dbport = 5432
-dbname = prueba_work
+dbuser = 
+dbpass = 
+dbhost = 
+dbport = 
+dbname = 
 
 
 [data]
