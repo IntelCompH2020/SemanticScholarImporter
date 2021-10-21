@@ -1,6 +1,7 @@
 # Ignore all sub-directories
 */
 !dbManager/
+!dbBase/
 
 # Local configuration file
 config.cf
