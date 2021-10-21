@@ -19,8 +19,9 @@ from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 import requests
-from sqlalchemy import create_engine, sql
 from tqdm import tqdm
+
+from dbManager.dbBase.base_dm_postgres import BaseDMsql
 
 try:
     # UCS-4
@@ -75,18 +76,18 @@ def process_paper(paperEntry):
     and returns a list to insert in S2papers
     """
     try:
-        year = (int(paperEntry["year"]),)
+        year = int(paperEntry["year"])
     except:
         year = 9999
 
     try:
         magid = int(paperEntry["magid"])
     except:
-        magid = np.nan
+        magid = None
     try:
         pmid = int(paperEntry["pmid"])
     except:
-        pmid = np.nan
+        pmid = None
 
     paper_list = [
         paperEntry["id"],
@@ -128,21 +129,22 @@ def process_paperFile(gzf):
     papers_infile = read_papers_infile(gzf)
 
     # Extract venues getting rid of repetitions
-    thisfile_venues = set([normalize(paper["venue"]) for paper in papers_infile])
+    thisfile_venues = set(normalize(paper["venue"]) for paper in papers_infile)
     thisfile_venues.discard(None)
+    thisfile_venues = [[el] for el in thisfile_venues]
 
     # Extract journals getting rid of repetitions
-    thisfile_journals = set(
-        [normalize(paper["journalName"]) for paper in papers_infile]
-    )
+    thisfile_journals = set(normalize(paper["journalName"]) for paper in papers_infile)
     thisfile_journals.discard(None)
+    thisfile_journals = [[el] for el in thisfile_journals]
 
     # Extract all fields, and flatten before getting rid of repetitions
     # Flatenning is necessary because each paper has a list of fields
     thisfile_fields = set(
-        [normalize(item) for paper in papers_infile for item in paper["fieldsOfStudy"]]
+        normalize(item) for paper in papers_infile for item in paper["fieldsOfStudy"]
     )
     thisfile_fields.discard(None)
+    thisfile_fields = [[el] for el in thisfile_fields]
 
     # Extract fields for the S2papers table
     thisfile_papers = [process_paper(el) for el in papers_infile]
@@ -224,7 +226,8 @@ def process_Authorship(gzf):
 def process_Fields(gzf, venues_dict, journals_dict, fields_dict, papers_set):
     """
     This function takes a zfile with paper information as input
-    and returns a list ready to insert in paperField, paperJournal and paperVenues
+    and returns a list(dict) to transform into DataFrame and
+    ready to insert in paperField, paperJournal and paperVenues
     """
 
     # Get papers in file
@@ -384,46 +387,39 @@ def get_sources(paper, stype="references"):
     return df_reference
 
 
-class S2manager:
-    def __init__(self, dbuser, dbpass, dbhost, dbport, dbname):
+class S2manager(BaseDMsql):
+    # class S2manager:
+    #     def __init__(self, dbuser, dbpass, dbhost, dbport, dbname):
 
-        # Database configuration
-        self.dbuser = dbuser
-        self.dbpass = dbpass
-        self.dbhost = dbhost
-        self.dbport = dbport
-        self.dbname = dbname
-        self.engine = create_engine(
-            f"postgresql://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}"
-        )
+    #         # Database configuration
+    #         self.dbuser = dbuser
+    #         self.dbpass = dbpass
+    #         self.dbhost = dbhost
+    #         self.dbport = dbport
+    #         self.dbname = dbname
+    #         self.engine = create_engine(
+    #             f"postgresql://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}"
+    #         )
 
     def create_database(self, file):
         """ Create database from file """
 
-        with self.engine.connect() as con:
-            file = open(file)
-            query = sql.text(file.read()).execution_options(autocommit=True)
+        with open(file, "r") as f:
+            self.execute(f.read())
+        # with self.engine.connect() as con:
+        #     file = open(file)
+        #     query = sql.text(file.read()).execution_options(autocommit=True)
 
-            con.execute(query)
-
-    def drop_database(self):
-        """ Remove all tables """
-
-        with self.engine.connect() as con:
-            query = sql.text(
-                "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-            ).execution_options(autocommit=True)
-
-            con.execute(query)
+        #     con.execute(query)
 
     def read_table_set(self, table, col):
         """ Read a table column and obtain all its unique values """
 
-        df = pd.read_sql_table(table, self.engine, columns=[col])
+        df = self.readDBtable(table, selectOptions=col)
         values = set(df[col].tolist())
         return values
 
-    def importPapers(self, dir_data, ncpu, chunksize=100000):
+    def importPapers(self, dir_data, ncpu, chunksize=None):
         """
         Import data from Semantic Scholar compressed data files
         available at the indicated location
@@ -468,34 +464,38 @@ class S2manager:
                 "pmid",
                 "magId",
             ]
-            df = pd.DataFrame(thisfile_papers, columns=columns)
-            set_new_data = set(df["S2paperID"])
-            df = df[df["S2paperID"].isin(papers_set ^ set_new_data)]
-            df.to_sql("S2papers", self.engine, if_exists="append", index=False)
+            set_new_data = set(p[0] for p in thisfile_papers)
+            set_new_data = set_new_data.difference(papers_set)
+            thisfile_papers = [p for p in thisfile_papers if p[0] in set_new_data]
+            if thisfile_papers:
+                self.insertInTable("S2papers", columns, thisfile_papers, chunksize)
             papers_set.update(set_new_data)
 
             # S2venues
-            columns = "venueName"
-            df = pd.DataFrame(thisfile_venues, columns=[columns])
-            set_new_data = set(df[columns])
-            df = df[df[columns].isin(venues_set ^ set(df[columns]))]
-            df.to_sql("S2venues", self.engine, if_exists="append", index=False)
+            columns = ["venueName"]
+            set_new_data = set(p[0] for p in thisfile_venues)
+            set_new_data = set_new_data.difference(venues_set)
+            thisfile_venues = [p for p in thisfile_venues if p[0] in set_new_data]
+            if thisfile_venues:
+                self.insertInTable("S2venues", columns, thisfile_venues, chunksize)
             venues_set.update(set_new_data)
 
             # S2journals
-            columns = "journalName"
-            df = pd.DataFrame(thisfile_journals, columns=[columns])
-            set_new_data = set(df[columns])
-            df = df[df[columns].isin(journs_set ^ set(df[columns]))]
-            df.to_sql("S2journals", self.engine, if_exists="append", index=False)
+            columns = ["journalName"]
+            set_new_data = set(p[0] for p in thisfile_journals)
+            set_new_data = set_new_data.difference(journs_set)
+            thisfile_journals = [p for p in thisfile_journals if p[0] in set_new_data]
+            if thisfile_journals:
+                self.insertInTable("S2journals", columns, thisfile_journals, chunksize)
             journs_set.update(set_new_data)
 
             # S2fields
-            columns = "fieldName"
-            df = pd.DataFrame(thisfile_fields, columns=[columns])
-            set_new_data = set(df[columns])
-            df = df[df[columns].isin(fields_set ^ set(df[columns]))]
-            df.to_sql("S2fields", self.engine, if_exists="append", index=False)
+            columns = ["fieldName"]
+            set_new_data = set(p[0] for p in thisfile_fields)
+            set_new_data = set_new_data.difference(fields_set)
+            thisfile_fields = [p for p in thisfile_fields if p[0] in set_new_data]
+            if thisfile_fields:
+                self.insertInTable("S2fields", columns, thisfile_fields, chunksize)
             fields_set.update(set_new_data)
 
         if ncpu:
@@ -515,7 +515,7 @@ class S2manager:
                     populate(file_data)
                     pbar.update()
 
-    def importAllSources(self, ncpu, stype="references", chunksize=100000):
+    def importAllSources(self, ncpu, stype="references", chunksize=None):
         """ Imports References/Citation information from API """
 
         print("Obtaining S2paperIDs")
@@ -527,15 +527,6 @@ class S2manager:
             """Yields successive n-sized chunks from list l."""
             for i in range(0, len(l), n):
                 yield l[i : i + n]
-
-        def populate(df):
-            """ Aux function to insert data into database """
-
-            # Remove papers not present in database
-            df = df[df["S2paperID2"].isin(papers_set)]
-
-            # Introduce new data
-            df.to_sql("citations", self.engine, if_exists="append", index=False)
 
         ch_size = 100  # Number of papers to process at a time
         remaining = len(papers_set)
@@ -561,66 +552,91 @@ class S2manager:
 
                 # Concat all references
                 df_papers_references = pd.concat(papers_references)
+                # Insert into table
                 if not df_papers_references.empty:
-                    populate(df_papers_references)
+                    # Remove papers not present in database
+                    df_papers_references = df_papers_references[
+                        df_papers_references["S2paperID2"].isin(papers_set)
+                    ]
+                    # Introduce new data
+                    self.insertInTable(
+                        "citations",
+                        df_papers_references.columns,
+                        df_papers_references.values,
+                        chunksize,
+                    )
                 remaining = remaining - ch_size
                 chunk_bar.update()
 
-    # def importSourceTypes(self, ncpu, stype="references", chunksize=100000):
-    #     """ Imports References/Citation types for citations already in database """
+    def importSourceTypes(self, ncpu, stype="references", chunksize=None):
+        """ Imports References/Citation types for citations already in database """
 
-    #     print("Obtaining S2paperIDs")
+        def implode(df, by="S2paperID1", col="S2paperID2"):
+            """
+            Convert separate rows with same 'by' and multiple 'col'
+            to single row of one 'by' and a list of 'col'
 
-    #     def implode(df, by="S2paperID1", col="S2paperID2"):
-    #         """ Convert separate rows with same 'by' and multiple 'col'
-    #             to single row of one 'by' and a list of 'col' """
-    #         return df.groupby(by).agg({col: lambda x: x.tolist()}).reset_index()
+            E.g.\\
+            |   |   by  |  col  ||\\
+            |:-:|:-----:|:-----:|\\
+            | 1 | ref_1 | ref_x |\\
+            | 2 | ref_1 | ref_y |\\
+            | 3 | ref_2 | ref_x |\n
+            Is transformed into:\n
+            |   |   by  |       col      |\\
+            |:-:|:-----:|:--------------:|\\
+            | 1 | ref_1 | [ref_x, ref_y] |\\
+            | 2 | ref_2 |      ref_x     |
+            """
+            return df.groupby(by).agg({col: lambda x: x.tolist()}).reset_index()
 
-    #     # def chunks(l, n):
-    #     #     """Yields successive n-sized chunks from list l."""
-    #     #     for i in range(0, len(l), n):
-    #     #         yield l[i : i + n]
+        print("Processing citations in database")
+        # Read citations table by chunks
+        for chunk in self.readDBchunks(
+            "citations",
+            "citationID",
+            selectOptions=["S2paperID1", "S2paperID2"],
+            chunksize=chunksize,
+            limit=None,
+        ):
 
-    #     def populate(df):
-    #         """ Aux function to insert data into database
-    #             Updates previous data in table
-    #         """
-    #         # TODO: use update function from db_manager
-    #         # Update table with new data
-    #         df.to_sql("citations", self.engine, if_exists="append", index=False)
+            cit_df = implode(chunk).set_index("S2paperID1")
+            cit_df = cit_df["S2paperID2"].to_dict()
 
-    #     # Read citations table by chunks
-    #     count = 0
-    #     for chunk in pd.read_sql_table(
-    #         "citations",
-    #         self.engine,
-    #         columns=["S2paperID1", "S2paperID2"],
-    #         chunksize=chunksize,
-    #     ):
-    #         count += 1
-    #         print(f"\rProcessing chunk {count}", end="", flush=True)
+            papers_references = []
+            if ncpu:
+                # Parallel processing
+                with Pool(ncpu) as p:
+                    for df_sources in p.imap(
+                        partial(get_sources, stype=stype,), cit_df.keys()
+                    ):
+                        # Remove references not present in database
+                        paper = df_sources.iloc[0, 0]
+                        sources = cit_df[paper]
+                        df_sources = df_sources.loc[
+                            df_sources["S2paperID2"].isin(sources)
+                        ]
+                        papers_references.append(df_sources)
+            else:
+                for paper, sources in cit_df.items():
+                    df_sources = get_sources(paper, stype=stype)
+                    # Remove references not present in database
+                    df_sources = df_sources.loc[df_sources["S2paperID2"].isin(sources)]
+                    papers_references.append(df_sources)
 
-    #         cit_df = implode(chunk).set_index("S2paperID1")
-    #         cit_df = cit_df["S2paperID2"].to_dict()
+            # Concat all references
+            df_papers_references = pd.concat(papers_references)
+            # Insert into table
+            if not df_papers_references.empty:
+                # Update table with new data
+                self.setField(
+                    "citations",
+                    ["S2paperID1", "S2paperID2"],
+                    ["isInfluential", "BackgrIntent", "MethodIntent", "ResultIntent"],
+                    df_papers_references.values,
+                )
 
-    #         papers_references = []
-    #         if ncpu:
-    #             # Parallel processing
-    #             with Pool(ncpu) as p:
-    #                 for df_sources in p.imap(
-    #                     partial(get_sources, stype=stype,), cit_df.keys()
-    #                 ):
-    #                     df_sources = df_sources.loc[
-    #                         df_sources["S2paperID2"].isin(
-    #                             cit_df[df_sources["S2paperID1"]]
-    #                         )
-    #                     ]
-    #         else:
-    #             for paper, sources in cit_df.values:
-    #                 df_sources = get_sources(paper, stype=stype)
-    #                 df_sources = df_sources.loc[df_sources["S2paperID2"].isin(sources)]
-
-    def importCitations(self, dir_data, ncpu, stype="references", chunksize=100000):
+    def importCitations(self, dir_data, ncpu, stype="references", chunksize=None):
         """ Imports Citation information from zip files.
         
         stype: String
@@ -647,12 +663,8 @@ class S2manager:
             ]
 
             columns = ["S2paperID1", "S2paperID2"]
-            citations_df = pd.DataFrame(aux_list, columns=columns)
-
             # Introduce new data
-            citations_df.to_sql(
-                "citations", self.engine, if_exists="append", index=False
-            )
+            self.insertInTable("citations", columns, aux_list, chunksize)
 
         if ncpu:
             # Parallel processing
@@ -663,7 +675,6 @@ class S2manager:
                     ):
                         populate(cite_list)
                         pbar.update()
-
         else:
             with tqdm(total=len(gz_files), leave=None) as pbar:
                 for gzf in gz_files:
@@ -671,25 +682,19 @@ class S2manager:
                     populate(cite_list)
                     pbar.update()
 
-    def importFields(self, dir_data, ncpu, chunksize=100000):
+    def importFields(self, dir_data, ncpu, chunksize=None):
         """ Imports Fields, Journals and Volumes of Study associated to each paper """
 
         # We extract venues, journals and fields as dictionaries
         # to name-id
         print("Obtaining venues, journals and fields dictionaries")
-        venues_dict = pd.read_sql_table(
-            "S2venues", self.engine, columns=["venueName", "venueID"]
-        )
+        venues_dict = self.readDBtable("S2venues", ["venueName", "venueID"])
         venues_dict = dict(venues_dict.values.tolist())
 
-        journals_dict = pd.read_sql_table(
-            "S2journals", self.engine, columns=["journalName", "journalID"]
-        )
+        journals_dict = self.readDBtable("S2journals", ["journalName", "journalID"])
         journals_dict = dict(journals_dict.values.tolist())
 
-        fields_dict = pd.read_sql_table(
-            "S2fields", self.engine, columns=["fieldName", "fieldID"]
-        )
+        fields_dict = self.readDBtable("S2fields", ["fieldName", "fieldID"])
         fields_dict = dict(fields_dict.values.tolist())
 
         print("Obtaining S2paperIDs")
@@ -705,13 +710,13 @@ class S2manager:
             # Introduce new data
             # FIELDS
             df = pd.DataFrame(papers_fields)
-            df.to_sql("paperField", self.engine, if_exists="append", index=False)
+            self.insertInTable("paperField", df.columns, df.values, chunksize)
             # VENUES
             df = pd.DataFrame(papers_venues)
-            df.to_sql("paperVenue", self.engine, if_exists="append", index=False)
+            self.insertInTable("paperVenue", df.columns, df.values, chunksize)
             # JOURNALS
             df = pd.DataFrame(papers_journals)
-            df.to_sql("paperJournal", self.engine, if_exists="append", index=False)
+            self.insertInTable("paperJournal", df.columns, df.values, chunksize)
 
         print("Filling in venue, journal and field of study data...")
         if ncpu:
@@ -739,7 +744,7 @@ class S2manager:
                     populate(all_data)
                     pbar.update()
 
-    def importAuthorsData(self, dir_data, ncpu):
+    def importAuthorsData(self, dir_data, ncpu, chunksize=None):
         """ Imports authors' information """
 
         print("Filling authors information")
@@ -789,14 +794,14 @@ class S2manager:
 
                 if len(df):
                     # Populate tables with the new data
-                    df[columns].to_sql(
-                        "S2authors", self.engine, if_exists="append", index=False
+                    self.insertInTable(
+                        "S2authors", columns, df[columns].values, chunksize
                     )
                     authors_set.update(df["S2authorID"].values)
 
                 chunk_bar.update()
 
-    def importAuthorship(self, dir_data, ncpu):
+    def importAuthorship(self, dir_data, ncpu, chunksize=None):
         """ Imports Authorship information (paper-author data) """
 
         print("Processing paper-authors information")
@@ -823,7 +828,7 @@ class S2manager:
             df = pd.DataFrame(aux_list, columns=columns)
 
             # Introduce new data
-            df.to_sql("paperAuthor", self.engine, if_exists="append", index=False)
+            self.insertInTable("paperAuthor", columns, df.values, chunksize)
             authors_set.update(df["S2authorID"].values)
 
         if ncpu:

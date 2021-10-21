@@ -75,7 +75,7 @@ def main(
                 selection = input()
                 if selection == "y":
                     print("Regenerating the database. Existing data will be removed.")
-                    DB.drop_database()
+                    DB.deleteDBtables()
                     DB.create_database("dbManager/create_sql.sql")
 
             elif selection == "2":
@@ -84,20 +84,20 @@ def main(
 
             elif selection == "3":
                 print("Importing authors data.")
-                DB.importAuthorsData(dir_data, dbncpu)
+                DB.importAuthorsData(dir_data, dbncpu, dbchunksize)
 
             elif selection == "4":
                 print("Importing sources data.")
-                DB.importCitations(dir_data, dbncpu, stype="references")
-                # DB.importSourceTypes(dbncpu, stype="references")
+                DB.importCitations(dir_data, dbncpu, "references", dbchunksize)
+                # DB.importSourceTypes(dbncpu, "references", dbchunksize)
 
             elif selection == "5":
-                print("Importing fields, journals and venues of study data.")
+                print("Importing venues, journals and fields of study data.")
                 DB.importFields(dir_data, dbncpu, dbchunksize)
 
             elif selection == "6":
                 print("Importing authorship data.")
-                DB.importAuthorship(dir_data, dbncpu)
+                DB.importAuthorship(dir_data, dbncpu, dbchunksize)
 
             elif selection == "0":
                 return
@@ -107,7 +107,7 @@ def main(
     else:
         if reset:
             print("Regenerating the database. Existing data will be removed.")
-            DB.drop_database()
+            DB.deleteDBtables()
             DB.create_database("dbManager/create_sql.sql")
 
         if papers:
@@ -116,20 +116,20 @@ def main(
 
         if authors:
             print("Importing authors data.")
-            DB.importAuthorsData(dir_data, dbncpu)
+            DB.importAuthorsData(dir_data, dbncpu, dbchunksize)
 
         if sources:
             print("Importing sources data.")
-            DB.importCitations(dir_data, dbncpu, stype="references")
-            # DB.importSourceTypes(dbncpu, stype="references")
+            DB.importCitations(dir_data, dbncpu, "references", dbchunksize)
+            # DB.importSourceTypes(dbncpu, "references", dbchunksize)
 
         if fields:
-            print("Importing fields, journals and venues of study data.")
+            print("Importing venues, journals and fields of study data.")
             DB.importFields(dir_data, dbncpu, dbchunksize)
 
         if authorship:
             print("Importing authorship data.")
-            DB.importAuthorship(dir_data, dbncpu)
+            DB.importAuthorship(dir_data, dbncpu, dbchunksize)
 
 
 if __name__ == "__main__":
