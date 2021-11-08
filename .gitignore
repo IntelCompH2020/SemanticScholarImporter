@@ -1,3 +1,9 @@
+config.cf
+*.ipynb
+*.zip
+*.pkl
+
+=======
 # Ignore all sub-directories
 */
 !dbManager/
