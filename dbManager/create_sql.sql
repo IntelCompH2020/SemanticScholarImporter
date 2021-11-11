@@ -46,6 +46,12 @@
 --     -- "AIselection" BOOLEAN,
 --     -- "langid" VARCHAR(3)
 -- ) ;
+-- CREATE TABLE "paperLemas"(
+--     "S2paperID" CHAR(40) COLLATE "default",
+--     "lemas" TEXT COLLATE "default",
+--     FOREIGN KEY ("S2paperID") REFERENCES "S2papers" ("S2paperID") ON DELETE CASCADE
+-- );
+
 CREATE TABLE "S2papers"(
     "paperID" SERIAL,
     "S2paperID" CHAR(40) PRIMARY KEY, --[str]
@@ -61,12 +67,6 @@ CREATE TABLE "S2papers"(
     "doiUrl" VARCHAR(256) COLLATE "default", --[str]
     "pmid" INT, --[str]
     "magId" BIGINT --[str]
-);
-
-CREATE TABLE "paperLemas"(
-    "S2paperID" CHAR(40) COLLATE "default",
-    "lemas" TEXT COLLATE "default",
-    FOREIGN KEY ("S2paperID") REFERENCES "S2papers" ("S2paperID") ON DELETE CASCADE
 );
 
 CREATE TABLE "S2authors"(
