@@ -171,7 +171,10 @@ class BaseDMsql(object):
 
         # If tables is None, all tables are deleted and re-generated
         if tables is None:
-            self._c.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+            for table in self.getTableNames():
+                #Though DROP SCHEMA is cleaner, it may face privilege issues
+                self._c.execute(SQL("DROP TABLE {} CASCADE").format(Identifier(table)))
+                #self._c.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
 
         else:
             # It tables is not a list, make the appropriate list
