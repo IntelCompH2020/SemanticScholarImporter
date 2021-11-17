@@ -11,3 +11,6 @@ config.cf
 
 # Local configuration file
 config.cf
+
+# docx files
+*.docx

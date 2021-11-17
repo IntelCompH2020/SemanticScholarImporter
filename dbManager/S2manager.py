@@ -21,7 +21,8 @@ import pandas as pd
 import requests
 from tqdm import tqdm
 
-from dbManager.dbBase.base_dm_postgres import BaseDMsql
+# from dbManager.dbBase.base_dm_postgres import BaseDMsql
+from dbManager.dbBase.base_dm_sql_alch import BaseDMsql
 
 try:
     # UCS-4
@@ -61,12 +62,14 @@ def read_papers_infile(gz_file):
     """ Load papers information in file """
     try:
         # Read json and separate papers
+        # with gzip.open(gz_file, "rt", encoding="utf8") as f:
+        #     papers_infile = f.read().replace("}\n{", "},{")
         with gzip.open(gz_file, "rt", encoding="utf8") as f:
-            papers_infile = f.read().replace("}\n{", "},{")
+            papers_infile = [json.loads(l) for l in f.readlines()]
     except:
         print(f"Error with file {gz_file}")
         return []
-    papers_infile = json.loads("[" + papers_infile + "]")
+    # papers_infile = json.loads("[" + papers_infile + "]")
     return papers_infile
 
 
@@ -401,16 +404,16 @@ class S2manager(BaseDMsql):
     #             f"postgresql://{dbuser}:{dbpass}@{dbhost}:{dbport}/{dbname}"
     #         )
 
-    def create_database(self, file):
-        """ Create database from file """
+    # def create_database(self, file):
+    #     """ Create database from file """
 
-        with open(file, "r") as f:
-            self.execute(f.read())
-        # with self.engine.connect() as con:
-        #     file = open(file)
-        #     query = sql.text(file.read()).execution_options(autocommit=True)
+    #     with open(file, "r") as f:
+    #         self.execute(f.read())
+    # with self.engine.connect() as con:
+    #     file = open(file)
+    #     query = sql.text(file.read()).execution_options(autocommit=True)
 
-        #     con.execute(query)
+    #     con.execute(query)
 
     def read_table_set(self, table, col):
         """ Read a table column and obtain all its unique values """
@@ -561,7 +564,7 @@ class S2manager(BaseDMsql):
                     # Introduce new data
                     self.insertInTable(
                         "citations",
-                        df_papers_references.columns,
+                        df_papers_references.columns.tolist(),
                         df_papers_references.values,
                         chunksize,
                     )
@@ -710,13 +713,15 @@ class S2manager(BaseDMsql):
             # Introduce new data
             # FIELDS
             df = pd.DataFrame(papers_fields)
-            self.insertInTable("paperField", df.columns, df.values, chunksize)
+            self.insertInTable("paperField", df.columns.tolist(), df.values, chunksize)
             # VENUES
             df = pd.DataFrame(papers_venues)
-            self.insertInTable("paperVenue", df.columns, df.values, chunksize)
+            self.insertInTable("paperVenue", df.columns.tolist(), df.values, chunksize)
             # JOURNALS
             df = pd.DataFrame(papers_journals)
-            self.insertInTable("paperJournal", df.columns, df.values, chunksize)
+            self.insertInTable(
+                "paperJournal", df.columns.tolist(), df.values, chunksize
+            )
 
         print("Filling in venue, journal and field of study data...")
         if ncpu:
