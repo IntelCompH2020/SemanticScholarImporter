@@ -8,6 +8,7 @@ config.cf
 */
 !dbManager/
 !dbBase/
+!pySpark
 
 # Local configuration file
 config.cf
