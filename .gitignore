@@ -1,5 +1,4 @@
 config.cf
-*.ipynb
 *.zip
 *.pkl
 
