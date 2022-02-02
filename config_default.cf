@@ -14,10 +14,16 @@ dbname =
 
 [data]
 # dir_data:     Directory where information is stored
+# dir_parquet:  Directory of parquet files
+# version:      Version of data to be used/downloaded
+#                   last: the last version will be used
+#                   date: in format YYYY-MM-DD
 # ncpu:         Number of cores for parallel processing
 #               Set to 0 to deactivate parallel processing
 # chunksize:    Size of chunks for paper processing and database ingestion
 
-dir_data = ../SemanticScholar/
+dir_data = ../Datasets/SemanticScholar
+dir_parquet = ../Datasets/SemanticScholar/parquet
+version = last
 ncpu = 4
 chunksize = 100000

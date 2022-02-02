@@ -639,7 +639,7 @@ class S2manager(BaseDMsql):
                     df_papers_references.values,
                 )
 
-    def importCitations(self, dir_data, ncpu, stype="references", chunksize=None):
+    def importCitations(self, dir_data, ncpu, chunksize=None, stype="references"):
         """ Imports Citation information from zip files.
         
         stype: String

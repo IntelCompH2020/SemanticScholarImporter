@@ -7,6 +7,139 @@ from pathlib import Path
 
 from dbManager.S2manager import S2manager
 
+# from downloadSS import download_SS
+
+
+options = [
+    {
+        "name": "reset",
+        "abbr": None,
+        "action": "store_true",
+        "title": "Reset database",
+    },
+    {
+        "name": "index",
+        "abbr": "i",
+        "action": "store_true",
+        "title": "Create table indexes",
+    },
+    {
+        "name": "papers",
+        "abbr": "p",
+        "action": "store_true",
+        "title": "Import papers from data files",
+    },
+    {
+        "name": "authors",
+        "abbr": "a",
+        "action": "store_true",
+        "title": "Import authors from data files",
+    },
+    {
+        "name": "sources",
+        "abbr": "s",
+        "action": "store_true",
+        "title": "Import sources data for papers in database",
+        "type": "references",
+    },
+    {
+        "name": "fields",
+        "abbr": "f",
+        "action": "store_true",
+        "title": "Import fields, journals and volumes of study data from data files",
+    },
+    {
+        "name": "authorship",
+        "abbr": "u",
+        "action": "store_true",
+        "title": "Import authorship from data files",
+    },
+]
+
+
+def manager(DB, option, args=[]):
+    """
+    Executes option
+    """
+    option_names = [o["name"] for o in options]
+    if option not in option_names:
+        print(f"Error: invalid option '{option}'")
+        return
+
+    if option == "reset":
+        print("Regenerating the database. Existing data will be removed.")
+        DB.deleteDBtables()
+        DB.executeSQLfile("dbManager/create_sql.sql")
+
+    elif option == "index":
+        print("Creating table indexes.")
+        DB.executeSQLfile("dbManager/create_index.sql")
+
+    elif option == "papers":
+        print("Importing papers data.")
+        DB.importPapers(*args)
+
+    elif option == "authors":
+        print("Importing authors data.")
+        DB.importAuthorsData(*args)
+
+    elif option == "sources":
+        print("Importing sources data.")
+        DB.importCitations(*args)
+        # DB.importSourceTypes(dbncpu, "references", dbchunksize)
+
+    elif option == "fields":
+        print("Importing venues, journals and fields of study data.")
+        DB.importFields(*args)
+
+    elif option == "authorship":
+        print("Importing authorship data.")
+        DB.importAuthorship(*args)
+
+    # if option == "to-parquet":
+    #     print("Saving data files to parquet.")
+    #     download_SS(*args)
+
+
+def menu():
+    print("\nSelect option:")
+    for i, opt in enumerate(options):
+        print(f"{i+1}. {opt['title']}")
+    print("0. Exit")
+
+
+def interface(DB, args):
+    num_options = len(options)
+    while True:
+        menu()
+        selection = input()
+        try:
+            selection = int(selection)
+        except:
+            print("Invalid option")
+            continue
+
+        if selection not in range(num_options + 1):
+            print("Invalid option")
+
+        else:
+            if selection == 0:
+                exit()
+
+            opt = options[selection - 1].get("name")
+            if selection == 1:
+                print("Previous info will be deleted. Continue?\n[y]/[n]")
+                selection = input()
+                if selection == "y":
+                    manager(DB, opt)
+                else:
+                    continue
+            else:
+                if opt == "sources":
+                    manager(DB, opt, args + [options[selection - 1].get("type")])
+                else:
+                    manager(DB, opt, args)
+
 
 def main():
 
@@ -33,7 +166,8 @@ Usage:
     # Parse args
 
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter, description=description,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=description,
     )
     parser.add_argument(
         "-I",
@@ -41,38 +175,26 @@ Usage:
         action="store_true",
         help="Show simple interface in terminal.",
     )
-    parser.add_argument(
-        "--reset",
-        action="store_true",
-        help="Reset database. This will remove all previously stored information.",
-    )
-    parser.add_argument(
-        "--index", "-i", action="store_true", help="Create table indexes",
-    )
-    parser.add_argument(
-        "--papers", "-p", action="store_true", help="Import papers from data files"
-    )
-    parser.add_argument(
-        "--authors", "-a", action="store_true", help="Import authors from data files"
-    )
-    parser.add_argument(
-        "--sources",
-        "-s",
-        action="store_true",
-        help="Import sources data for papers in database",
-    )
-    parser.add_argument(
-        "--fields",
-        "-f",
-        action="store_true",
-        help="Import fields, journals and volumes of study data from data files",
-    )
-    parser.add_argument(
-        "--authorship",
-        "-u",
-        action="store_true",
-        help="Import authorship from data files",
-    )
+    for arg in options:
+        # print(arg)
+        if arg["abbr"]:
+            parser.add_argument(
+                f'-{arg["abbr"]}',
+                f'--{arg["name"]}',
+                action=arg["action"],
+                help=arg["title"],
+            )
+        else:
+            parser.add_argument(
+                f'--{arg["name"]}',
+                action=arg["action"],
+                help=arg["title"],
+            )
+    # parser.add_argument(
+    #     "--to-parquet",
+    #     action="store_true",
+    #     help="Convert files in dir_data/version to parquet files",
+    # )
     args = vars(parser.parse_args())
 
     # EITHER [--function_name] or [--interface] MUST BE PASSED
@@ -97,6 +219,16 @@ Usage:
     # Datafiles
     dir_data = Path(cf.get("data", "dir_data"))
 
+    version = cf.get("data", "version")
+    releases = sorted([d.name for d in dir_data.iterdir() if d.is_dir()])
+    version = version.replace("-", "")
+    if version == "last":
+        version = releases[-1]
+    if version not in releases:
+        print(f"Version {version} not found")
+        return
+    data_files_dir = dir_data.joinpath(version)
+
     ####################################################
     # Database connection
 
@@ -105,91 +237,21 @@ Usage:
     )
 
     ####################################################
+    arguments = [data_files_dir, dbncpu, dbchunksize]
+
     # 1. If activated, display console
     if args["interface"]:
-        while True:
-            print("\nSelect option:")
-            print("1. Reset database")
-            print("2. Create table indexes")
-            print("3. Import papers from data files")
-            print("4. Import authors from data files")
-            print("5. Import sources data for papers in database")
-            print(
-                "6. Import fields, journals and volumes of study data from data files"
-            )
-            print("7. Import authorship from data files")
-            print("0. Quit")
-            selection = input()
-
-            if selection == "1":
-                print("Previous info will be deleted. Continue?\n[y]/[n]")
-                selection = input()
-                if selection == "y":
-                    print("Regenerating the database. Existing data will be removed.")
-                    DB.deleteDBtables()
-                    DB.executeSQLfile("dbManager/create_sql.sql")
-
-            elif selection == "2":
-                print("Creating table indexes.")
-                DB.executeSQLfile("dbManager/create_index.sql")
-
-            elif selection == "3":
-                print("Importing papers data.")
-                DB.importPapers(dir_data, dbncpu, dbchunksize)
-
-            elif selection == "4":
-                print("Importing authors data.")
-                DB.importAuthorsData(dir_data, dbncpu, dbchunksize)
-
-            elif selection == "5":
-                print("Importing sources data.")
-                DB.importCitations(dir_data, dbncpu, "references", dbchunksize)
-                # DB.importSourceTypes(dbncpu, "references", dbchunksize)
-
-            elif selection == "6":
-                print("Importing venues, journals and fields of study data.")
-                DB.importFields(dir_data, dbncpu, dbchunksize)
-
-            elif selection == "7":
-                print("Importing authorship data.")
-                DB.importAuthorship(dir_data, dbncpu, dbchunksize)
-
-            elif selection == "0":
-                exit()
-                # return
-
-            else:
-                print("Invalid option")
+        interface(DB, arguments)
     else:
-        if args["reset"]:
-            print("Regenerating the database. Existing data will be removed.")
-            DB.deleteDBtables()
-            DB.executeSQLfile("dbManager/create_sql.sql")
+        for opt in options:
+            if args[opt["name"]]:
+                if opt["name"] == "sources":
+                    manager(DB, opt["name"], arguments + [opt["type"]])
+                manager(DB, opt["name"], arguments)
 
-        if args["index"]:
-            print("Creating table indexes.")
-            DB.executeSQLfile("dbManager/create_index.sql")
-
-        if args["papers"]:
-            print("Importing papers data.")
-            DB.importPapers(dir_data, dbncpu, dbchunksize)
-
-        if args["authors"]:
-            print("Importing authors data.")
-            DB.importAuthorsData(dir_data, dbncpu, dbchunksize)
-
-        if args["sources"]:
-            print("Importing sources data.")
-            DB.importCitations(dir_data, dbncpu, "references", dbchunksize)
-            # DB.importSourceTypes(dbncpu, "references", dbchunksize)
-
-        if args["fields"]:
-            print("Importing venues, journals and fields of study data.")
-            DB.importFields(dir_data, dbncpu, dbchunksize)
-
-        if args["authorship"]:
-            print("Importing authorship data.")
-            DB.importAuthorship(dir_data, dbncpu, dbchunksize)
+        # if args["to-parquet"]:
+        #     print("Saving data files to parquet.")
+        #     download_SS(version=version, dest_dir=dir_data)
 
 
 if __name__ == "__main__":
