@@ -13,7 +13,7 @@ dbname =
 
 
 [data]
-# dir_data:     Directory where information is stored
+# dir_data:     Directory where raw files will be stored
 # dir_parquet:  Directory of parquet files
 # version:      Version of data to be used/downloaded
 #                   last: the last version will be used

@@ -33,19 +33,24 @@ def download_SS(version="last", dest_dir="SemanticScholar"):
     version_dir = Path(dest_dir).joinpath(version_dir)
     version_dir.mkdir(parents=True, exist_ok=True)
 
-    count = 0
-    print("Downloading...")
+    print("Version stats")
+    count=0
+    size=0
     for obj in bucket.objects.filter(Prefix=prefix + version):
-        file_name = obj.key.split("/")[-1]
-        if file_name.endswith(".gz"):
-            print(file_name)
-            bucket.download_file(
-                obj.key, version_dir.joinpath(file_name).as_posix()
-            )  # save to same path
-        count += 1
-        if count > 10:
-            break
+        count+=1
+        size+=obj.size
+    print('total size:')
+    print("%.3f GB" % (size*1.0/1024/1024/1024))
+    print('total count:')
+    print(count)
 
+    print("\nDownloading...")
+    for idx,obj in enumerate(bucket.objects.filter(Prefix=prefix + version)):
+        file_name = obj.key.split("/")[-1]
+        print(file_name, '[', idx, '/', count, ']')
+        bucket.download_file(
+            obj.key, version_dir.joinpath(file_name).as_posix()
+        )  # save to same path
 
 if __name__ == "__main__":
     cf = ConfigParser()
