@@ -14,13 +14,15 @@ dbname =
 
 [data]
 # dir_data:     Directory where raw files will be stored
-# dir_parquet:  Directory of parquet files
+# dir_out:      Directory of output files. Includes:
+#               - Parquet files
+#               - PDFs
 # version:      Version of data to be used/downloaded
 #                   last: the last version will be used
 #                   date: in format YYYY-MM-DD
 
 dir_data = ../Datasets/SemanticScholar
-dir_parquet = ../Datasets/SemanticScholar/parquet
+dir_out = ../Datasets/SemanticScholar/out
 version = last
 
 [import]
