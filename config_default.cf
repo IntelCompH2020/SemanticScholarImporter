@@ -18,12 +18,14 @@ dbname =
 # version:      Version of data to be used/downloaded
 #                   last: the last version will be used
 #                   date: in format YYYY-MM-DD
-# ncpu:         Number of cores for parallel processing
-#               Set to 0 to deactivate parallel processing
-# chunksize:    Size of chunks for paper processing and database ingestion
 
 dir_data = ../Datasets/SemanticScholar
 dir_parquet = ../Datasets/SemanticScholar/parquet
 version = last
+
+[import]
+# ncpu:         Number of cores for parallel processing
+#               Set to 0 to deactivate parallel processing
+# chunksize:    Size of chunks for paper processing and database ingestion
 ncpu = 4
 chunksize = 100000

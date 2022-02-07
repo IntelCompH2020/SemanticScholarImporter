@@ -212,8 +212,8 @@ Usage:
     dbhost = cf.get("database", "dbhost")
     dbport = cf.get("database", "dbport")
     dbname = cf.get("database", "dbname")
-    dbncpu = int(cf.get("data", "ncpu"))
-    dbchunksize = int(cf.get("data", "chunksize"))
+    dbncpu = int(cf.get("import", "ncpu"))
+    dbchunksize = int(cf.get("import", "chunksize"))
 
     #########################
     # Datafiles
