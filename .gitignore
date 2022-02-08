@@ -13,9 +13,13 @@ venv.bak/
 
 # Ignore all sub-directories
 */
+
+# Keep directories
 !dbManager/
 !dbBase/
-!pySpark
+
+# Keep pySpark notebooks
+!pySpark/*.ipynb
 
 # Local configuration file
 config.cf
