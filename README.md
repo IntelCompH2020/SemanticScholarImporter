@@ -3,6 +3,8 @@ This repository provides code to save, import and process [SemanticScholar](http
 
 Semantic Scholar is a search engine for research articles powered by the Allen Institute for Artificial Intelligence. This database is generated from the Semantic Scholar Open Research Corpus. JSON files are used to generate a relational database with author and citation tables. This dataset is still under construction to incorporate other metadata not provided directly by Semantic Scholar.
 
+As of Feb 2022 we include a notebook to create parquet files for the papers and authors information
+
 # Usage
 Copy and rename `config_default.cf` into `config.cf` adjusting options as needed.
 
