@@ -557,8 +557,10 @@ class BaseDMsql(object):
         if tables is None:
             with self.engine.begin() as conn:
                 if self.dbconnector == "postgres":
-                    sqlcmd = f"DROP SCHEMA {self.schema} CASCADE; CREATE SCHEMA {self.schema};"
-                    conn.execute(sqlcmd)
+                    for table in self.getTableNames():
+                        sqlcmd = f"TRUNCATE TABLE {self._conv_literal(table)} CASCADE"
+                        # sqlcmd = f"DROP SCHEMA {self.schema} CASCADE; CREATE SCHEMA {self.schema};"
+                        conn.execute(sqlcmd)
                 elif self.dbconnector == "mysql":
                     conn.execute("SET FOREIGN_KEY_CHECKS = 0")
                     for table in self.getTableNames():

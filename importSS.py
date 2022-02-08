@@ -57,7 +57,7 @@ options = [
 ]
 
 
-def manager(DB, option, args=[]):
+def manager(DB:S2manager, option, args=[]):
     """
     Executes option
     """
@@ -68,8 +68,10 @@ def manager(DB, option, args=[]):
 
     if option == "reset":
         print("Regenerating the database. Existing data will be removed.")
+        if not DB.getTableNames():
+            # Create database if doesn't exist
+            DB.executeSQLfile("dbManager/create_sql.sql")
         DB.deleteDBtables()
-        DB.executeSQLfile("dbManager/create_sql.sql")
 
     elif option == "index":
         print("Creating table indexes.")

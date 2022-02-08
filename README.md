@@ -6,13 +6,17 @@ Semantic Scholar is a search engine for research articles powered by the Allen I
 # Usage
 Copy and rename `config_default.cf` into `config.cf` adjusting options as needed.
 
-Create a new environment and install all dependencies:
+Create a new environment.
 ```
 python -m venv .venv
-pip install -r requirements.txt
 ```
+
 Then, activate environment.
 
+```
+pip install -r requirements.txt
+```
+And install all dependencies:
 
 # Executable files
 
