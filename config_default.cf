@@ -14,7 +14,7 @@ dbname =
 
 [data]
 # dir_data:     Directory where raw files will be stored
-# dir_out:      Directory of output files. Includes:
+# dir_parquet:      Directory of output files. Includes:
 #               - Parquet files
 #               - PDFs
 # version:      Version of data to be used/downloaded
@@ -22,7 +22,7 @@ dbname =
 #                   date: in format YYYY-MM-DD
 
 dir_data = ../Datasets/SemanticScholar
-dir_out = ../Datasets/SemanticScholar/out
+dir_parquet = ../Datasets/SemanticScholar/out
 version = last
 
 [import]
