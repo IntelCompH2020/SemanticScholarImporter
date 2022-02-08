@@ -26,6 +26,8 @@ dir_out = ../Datasets/SemanticScholar/out
 version = last
 
 [import]
+# Settings for efficient loading into the Postgres database
+# These settings are not used for Spark processing
 # ncpu:         Number of cores for parallel processing
 #               Set to 0 to deactivate parallel processing
 # chunksize:    Size of chunks for paper processing and database ingestion
