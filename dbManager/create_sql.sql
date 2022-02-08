@@ -71,7 +71,7 @@ CREATE TABLE "S2papers"(
 
 CREATE TABLE "S2authors"(
     "authorID" SERIAL,
-    "S2authorID" INT PRIMARY KEY,
+    "S2authorID" BIGINT PRIMARY KEY,
     "orcidID" VARCHAR(20) COLLATE "default",
     "orcidGivenName" VARCHAR(40) COLLATE "default",
     "orcidFamilyName" VARCHAR(100) COLLATE "default",
@@ -84,7 +84,7 @@ CREATE TABLE "S2authors"(
 CREATE TABLE "paperAuthor"(
     "paperAuthorID" SERIAL PRIMARY KEY,
     "S2paperID" CHAR(40) COLLATE "default",
-    "S2authorID" INT,
+    "S2authorID" BIGINT,
     FOREIGN KEY ("S2paperID") REFERENCES "S2papers" ("S2paperID") ON DELETE CASCADE,
     FOREIGN KEY ("S2authorID") REFERENCES "S2authors" ("S2authorID") ON DELETE CASCADE
 );
