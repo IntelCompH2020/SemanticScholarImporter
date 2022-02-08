@@ -10,15 +10,20 @@ Copy and rename `config_default.cf` into `config.cf` adjusting options as needed
 
 Create a new environment.
 ```
-python -m venv .venv
+python -m venv S2importer
 ```
 
 Then, activate environment.
 
 ```
+source S2importer/bin/activate
+```
+
+And install all dependencies:
+
+```
 pip install -r requirements.txt
 ```
-And install all dependencies:
 
 # Executable files
 
