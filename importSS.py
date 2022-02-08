@@ -222,7 +222,7 @@ Usage:
     dir_data = Path(cf.get("data", "dir_data"))
 
     version = cf.get("data", "version")
-    releases = sorted([d.name for d in dir_data.iterdir() if d.is_dir()])
+    releases = sorted([d.name for d in dir_data.iterdir() if d.is_dir() and d.name.isdigit()])
     version = version.replace("-", "")
     if version == "last":
         version = releases[-1]
