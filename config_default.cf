@@ -25,6 +25,10 @@ dir_data = ../Datasets/SemanticScholar
 dir_out = ../Datasets/SemanticScholar/out
 version = last
 
+dir_data = /export/ml4ds/IntelComp/Datalake/SemanticScholar/rawdata/20220201
+dir_parquet = /export/ml4ds/IntelComp/Datalake/SemanticScholar/20220201
+version = 20220201
+
 [import]
 # ncpu:         Number of cores for parallel processing
 #               Set to 0 to deactivate parallel processing
