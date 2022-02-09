@@ -57,7 +57,7 @@ options = [
 ]
 
 
-def manager(DB:S2manager, option, args=[]):
+def manager(DB: S2manager, option, args=[]):
     """
     Executes option
     """
@@ -220,9 +220,11 @@ Usage:
     #########################
     # Datafiles
     dir_data = Path(cf.get("data", "dir_data"))
-
     version = cf.get("data", "version")
-    releases = sorted([d.name for d in dir_data.iterdir() if d.is_dir() and d.name.isdigit()])
+
+    releases = sorted(
+        [d.name for d in dir_data.iterdir() if d.is_dir() and d.name.isdigit()]
+    )
     version = version.replace("-", "")
     if version == "last":
         version = releases[-1]

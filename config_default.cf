@@ -14,20 +14,12 @@ dbname =
 
 [data]
 # dir_data:     Directory where raw files will be stored
-# dir_parquet:      Directory of output files. Includes:
-#               - Parquet files
-#               - PDFs
 # version:      Version of data to be used/downloaded
 #                   last: the last version will be used
 #                   date: in format YYYY-MM-DD
 
 dir_data = ../Datasets/SemanticScholar
-dir_parquet = ../Datasets/SemanticScholar/out
 version = last
-
-dir_data = /export/ml4ds/IntelComp/Datalake/SemanticScholar/rawdata/20220201
-dir_parquet = /export/ml4ds/IntelComp/Datalake/SemanticScholar/20220201
-version = 20220201
 
 [import]
 # Settings for efficient loading into the Postgres database
@@ -37,3 +29,29 @@ version = 20220201
 # chunksize:    Size of chunks for paper processing and database ingestion
 ncpu = 4
 chunksize = 100000
+
+[spark]
+# dir_data:     Directory where raw files will be stored by version.
+#               Downloaded PDFs will be stored in dir_data/pdfs
+#               Example tree:
+#               dir_data:
+#                | - 20220201
+#                   | - corpus1.zip
+#                   | - corpus2.zip
+#                | - pdfs
+#                   | - doc1.pdf
+#                   | - doc2.pdf
+#
+# dir_parquet:  Directory of output parquet files.
+#               Example tree:
+#               dir_parquet:
+#                | - 20220201
+#                   | - authors.parquet
+#                   | - papers.parquet
+#
+# version:      Version of data to be used/downloaded
+#                   last: the last version will be used
+#                   date: in format YYYY-MM-DD
+dir_data = /export/ml4ds/IntelComp/Datalake/SemanticScholar/rawdata
+dir_parquet = /export/ml4ds/IntelComp/Datalake/SemanticScholar/parquet_prueba
+version = 20220201
