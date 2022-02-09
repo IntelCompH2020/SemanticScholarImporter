@@ -14,7 +14,7 @@ dbname =
 
 [data]
 # dir_data:     Directory where raw files will be stored
-# dir_out:      Directory of output files. Includes:
+# dir_parquet:      Directory of output files. Includes:
 #               - Parquet files
 #               - PDFs
 # version:      Version of data to be used/downloaded
@@ -22,7 +22,7 @@ dbname =
 #                   date: in format YYYY-MM-DD
 
 dir_data = ../Datasets/SemanticScholar
-dir_out = ../Datasets/SemanticScholar/out
+dir_parquet = ../Datasets/SemanticScholar/out
 version = last
 
 dir_data = /export/ml4ds/IntelComp/Datalake/SemanticScholar/rawdata/20220201
@@ -30,6 +30,8 @@ dir_parquet = /export/ml4ds/IntelComp/Datalake/SemanticScholar/20220201
 version = 20220201
 
 [import]
+# Settings for efficient loading into the Postgres database
+# These settings are not used for Spark processing
 # ncpu:         Number of cores for parallel processing
 #               Set to 0 to deactivate parallel processing
 # chunksize:    Size of chunks for paper processing and database ingestion
