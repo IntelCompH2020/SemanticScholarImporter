@@ -32,26 +32,24 @@ chunksize = 100000
 
 [spark]
 # dir_data:     Directory where raw files will be stored by version.
-#               Downloaded PDFs will be stored in dir_data/pdfs
-#               Example tree:
-#               dir_data:
-#                | - 20220201
-#                   | - corpus1.zip
-#                   | - corpus2.zip
-#                | - pdfs
-#                   | - doc1.pdf
-#                   | - doc2.pdf
-#
 # dir_parquet:  Directory of output parquet files.
-#               Example tree:
-#               dir_parquet:
-#                | - 20220201
-#                   | - authors.parquet
-#                   | - papers.parquet
-#
 # version:      Version of data to be used/downloaded
 #                   last: the last version will be used
 #                   date: in format YYYY-MM-DD
+# dir_pdfs:     Directory where downloaded PDFs will be stored
+
+# Example tree:
+#   global_dir:
+#   | - dir_data:
+#       | - 20220201
+#           | - corpus1.zip
+#           | - corpus2.zip
+#   | - dir_parquet:
+#       | - 20220201
+#           | - authors.parquet
+#           | - papers.parquet
+
 dir_data = /export/ml4ds/IntelComp/Datalake/SemanticScholar/rawdata
 dir_parquet = /export/ml4ds/IntelComp/Datalake/SemanticScholar/parquet_prueba
 version = 20220201
+dir_pdfs = /export/data_ml4ds/IntelComp/Datasets/semanticscholar/rawdata/pdfs/
