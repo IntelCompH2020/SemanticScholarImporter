@@ -1,62 +1,61 @@
 from configparser import ConfigParser
 from pathlib import Path
+import requests
+import urllib
+import json
 
-import boto3
-from botocore import UNSIGNED
-from botocore.config import Config
+# This script is based on the s2ag.py provided with the sample dataset by S2AI
 
-
-def download_SS(version="last", dest_dir="SemanticScholar"):
+def download_S2(token, dest_dir, version="latest"):
     """
     Download SemanticScholar info into `dest_dir`/`version`
     """
 
-    # Create client to download from S3
-    client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
-    bucket = boto3.resource("s3", config=Config(signature_version=UNSIGNED)).Bucket(
-        "ai2-s2-research-public"
-    )
-    # Get all releases
-    prefix = "open-corpus/"
-    releases = client.list_objects(Bucket=bucket.name, Prefix=prefix, Delimiter="/")
-    releases = releases.get("CommonPrefixes")
-    releases = sorted([o["Prefix"].split("/")[1] for o in releases])
+    # Download information about latest version
+    data = requests.get('https://api.semanticscholar.org/datasets/v1/release/' + version + '/')
 
-    if version == "last":
-        version = releases[-1]
-    if version not in releases:
-        print("Invalid version")
-        return
+    if data.ok:
 
-    # Create dir to save files
-    version_dir = version.replace("-", "")
-    version_dir = Path(dest_dir).joinpath(version_dir)
-    version_dir.mkdir(parents=True, exist_ok=True)
+        jsonData = data.json()
 
-    print("Version stats")
-    count = 0
-    size = 0
-    for obj in bucket.objects.filter(Prefix=prefix + version):
-        count += 1
-        size += obj.size
-    print("Total size:")
-    print("%.3f GB" % (size * 1.0 / 1024 / 1024 / 1024))
-    print("Total count:")
-    print(count)
+        release = jsonData['release_id']
+        datasets = [d['name'] for d in jsonData['datasets']]
 
-    print("\nDownloading...")
-    for idx, obj in enumerate(bucket.objects.filter(Prefix=prefix + version)):
-        file_name = obj.key.split("/")[-1]
-        print(file_name, "[", idx, "/", count, "]")
-        bucket.download_file(
-            obj.key, version_dir.joinpath(file_name).as_posix()
-        )  # save to same path
+        dest_dir = dest_dir.joinpath(release.replace('-','')).joinpath('rawdata')
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        
+        with dest_dir.joinpath('release_info.json').open('w') as jsonFile:
+            json.dump(jsonData, jsonFile, indent=4)
+
+        # Start downloading all datasets
+        for dtset in ['tldrs', 'abstracts', 'authors', 'paper-ids', 'papers', 'publication-venues', 'citations']:#datasets:
+            url = "http://api.semanticscholar.org/datasets/v1/release/" + release + "/dataset/"+dtset
+            dtset_info = requests.get(url, headers={'x-api-key':token})
+            
+            if dtset_info.ok:
+                print("\nDownloading dataset " + dtset)
+                dtsetData = dtset_info.json()
+
+                dtset_dir = dest_dir.joinpath(dtset)
+                dtset_dir.mkdir(parents=False, exist_ok=True)
+
+                with dtset_dir.joinpath(dtset+'info.json').open('w') as jsonFile:
+                    json.dump(dtsetData, jsonFile, indent=4)
+
+                for idx, fileUrl in enumerate(dtsetData['files']):
+                    print("Downloading file", idx, "of", len(dtsetData['files']))
+                    fileName = dtset_dir.joinpath(dtset + "-part" + str(idx) + ".json.gz")
+                    if not fileName.is_file():
+                        urllib.request.urlretrieve(fileUrl, fileName)
+
+    return
 
 
 if __name__ == "__main__":
     cf = ConfigParser()
     cf.read("config.cf")
-    dest_dir = cf.get("data", "dir_data")
-    version = cf.get("data", "version")
+    dest_dir = Path(cf.get("downloadS2", "dir_data"))
+    version = cf.get("downloadS2", "version")
+    token = cf.get("downloadS2", "S2_API_KEY")
 
-    download_SS(version=version, dest_dir=dest_dir)
+    download_S2(token=token, dest_dir=dest_dir, version=version)

@@ -1,3 +1,12 @@
+[downloadS2]
+dir_data = 
+S2_API_KEY = 
+version = latest
+
+
+
+
+
 [database]
 # dbuser:   Username
 # dbpass:   Password
@@ -10,16 +19,6 @@ dbpass =
 dbhost = 
 dbport = 
 dbname = 
-
-
-[data]
-# dir_data:     Directory where raw files will be stored
-# version:      Version of data to be used/downloaded
-#                   last: the last version will be used
-#                   date: in format YYYY-MM-DD
-
-dir_data = ../Datasets/SemanticScholar
-version = last
 
 [import]
 # Settings for efficient loading into the Postgres database
