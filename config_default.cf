@@ -1,5 +1,8 @@
 [downloadS2]
+
+# Directory where the raw data will be stored
 dir_data = 
+# Token provided by Allen Institute
 S2_API_KEY = 
 version = latest
 
