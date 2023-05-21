@@ -1,0 +1,15 @@
+columns_to_process:
+	- title
+	- paperAbstract
+id_column_name: id
+do_translate: True
+do_pos: True
+do_ner: True
+do_lemmas: True
+do_embeddings: True
+do_keywords: True
+ngrams:
+	- 1
+	- 2
+	- 3
+	

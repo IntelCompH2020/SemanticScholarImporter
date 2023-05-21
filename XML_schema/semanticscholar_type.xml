@@ -1,0 +1,216 @@
+﻿<!-- Created with Liquid Studio 2021 (https://www.liquid-technologies.com) -->
+<dataset_type>
+    <id/>
+    <identifier identifierType="string">semanticscholar</identifier>
+    <name>Semantic Scholar</name>
+    <metadata>
+        <titles>
+            <title>semanticscholar</title>
+            <title>Semantic Scholar</title>
+        </titles>
+        <publisher>Allen Institute for AI</publisher>
+        <subjects>
+            <subject>authors</subject>
+            <subject>publications</subject>
+            <subject>journals and conferences</subject>
+        </subjects>
+        <languages>
+            <language>en</language>
+        </languages>
+        <type class="Dataset">Dump</type>
+        <formats>
+            <format>parquet</format>
+        </formats>
+        <rightsList>
+            <rights rightsURI="https://opendatacommons.org/licenses/by/1-0/">Open Data Commons Attribution License (ODC-By) v1.0</rights>
+        </rightsList>
+        <descriptions>
+            <description descriptionType="Abstract">
+                Semantic Scholar is a search engine for research articles powered by the Allen Institute for Artificial Intelligence.
+                These datasets provide a variety of information about research papers taken from a snapshot in time of the Semantic Scholar corpus. This site is provided by The Allen Institute for Artificial Intelligence as a service to the research community. The site is covered by AI2 Terms of Use and Privacy Policy.
+                This dataset contains parquet tables for papers, authors, paper_author correspondence, and citations, which are built by merging the following datasets from Semantic Scholar: papers, authors, abstracts, citations.
+                These are publications from all fields of science available at
+                https://www.semanticscholar.org/. Includes authors, journals and conferences for different publication types since 1931.
+            </description>
+        </descriptions>
+        <typology>Science &amp; Innovation</typology>
+        <source>Semantic Scholar</source>
+        <tags>
+            <tag>Publications</tag>
+            <tag>Paper Abstracts</tag>
+        </tags>
+        <contact>
+            <name>Jerónimo Arenas-García</name>
+            <email>jarenas@ing.uc3m.es</email>
+            <phone>+34 91 624 6251</phone>
+            <organization>Universidad Carlos III de Madrid</organization>
+        </contact>
+        <webpage>https://www.semanticscholar.org/</webpage>
+        <logo>https://miro.medium.com/max/1400/1*wuOik0-WI97IW86STIR6Gg.png</logo>
+    </metadata>
+    <schema>
+        <type>file</type>
+        <entities>
+            <entity>
+                <name>papers</name>
+                <description>Information related to publications</description>
+                <filters>
+                    <filter>
+                        <field>id</field>
+                        <type>long</type>
+                    </filter>
+                    <filter>
+                        <field>title</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>paperAbstract</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>s2Url</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>year</field>
+                        <type>integer</type>
+                    </filter>
+                    <filter>
+                        <field>doi</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>pmid</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>magId</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>exterinalids</field>
+                        <type>struct</type>
+                    </filter>
+                    <filter>
+                        <field>fieldsOfStudy</field>
+                        <type>array[string]</type>
+                    </filter>
+                    <filter>
+                        <field>publicationtypes</field>
+                        <type>array[string]</type>
+                    </filter>
+                    <filter>
+                        <field>publicationdate</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>journalName</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>journalPages</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>journalVolume</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>venue</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>publicationvenueid</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>isopenaccess</field>
+                        <type>boolean</type>
+                    </filter>
+                    <filter>
+                        <field>referencecount</field>
+                        <type>integer</type>
+                    </filter>
+                    <filter>
+                        <field>citationcount</field>
+                        <type>integer</type>
+                    </filter>
+                    <filter>
+                        <field>influentialcitationcount</field>
+                        <type>integer</type>
+                    </filter>
+                    <filter>
+                        <field>openaccessinfo</field>
+                        <type>struct</type>
+                    </filter>
+                </filters>
+                <sample>...</sample>
+            </entity>
+            <entity>
+                <name>authors</name>
+                <description>Each of the unique authors</description>
+                <filters>
+                    <filter>
+                        <field>id</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>name</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>aliases</field>
+                        <type>array[string]</type>
+                    </filter>
+                    <filter>
+                        <field>papercount</field>
+                        <type>integer</type>
+                    </filter>
+                    <filter>
+                        <field>citationcount</field>
+                        <type>integer</type>
+                    </filter>
+                    <filter>
+                        <field>hindex</field>
+                        <type>integer</type>
+                    </filter>
+                </filters>
+                <sample>...</sample>
+            </entity>
+            <entity>
+                <name>paper_author</name>
+                <description>Paper-author relationship</description>
+                <filters>
+                    <filter>
+                        <field>paper_id</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>author_id</field>
+                        <type>string</type>
+                    </filter>
+                </filters>
+                <sample>...</sample>
+            </entity>
+            <entity>
+                <name>citations</name>
+                <description>Paper-paper relationship. Source paper cites dest.</description>
+                <filters>
+                    <filter>
+                        <field>source</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>dest</field>
+                        <type>string</type>
+                    </filter>
+                    <filter>
+                        <field>isinfluential</field>
+                        <type>boolean</type>
+                    </filter>
+                </filters>
+                <sample>...</sample>
+            </entity>
+        </entities>
+    </schema>
+</dataset_type>
