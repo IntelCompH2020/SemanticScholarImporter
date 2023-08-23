@@ -29,7 +29,8 @@ def download_S2(token, dest_dir, version="latest"):
 
         # Start downloading all datasets
         # for dtset in datasets:
-        for dtset in ['tldrs', 'abstracts', 'authors', 'paper-ids', 'papers', 'publication-venues', 'citations']:
+        # for dtset in ['tldrs', 'abstracts', 'authors', 'paper-ids', 'papers', 'publication-venues', 'citations']:
+        for dtset in ['s2orc', 'embeddings']:
             url = "http://api.semanticscholar.org/datasets/v1/release/" + release + "/dataset/"+dtset
             dtset_info = requests.get(url, headers={'x-api-key':token})
             
