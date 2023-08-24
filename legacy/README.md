@@ -1,3 +1,7 @@
+> [!IMPORTANT]  
+> During 2022 Semantic Scholar changed the way the compile and distribute the Semantic Scholar database. This implied deep changes in this repository. After the change, only the scripts and notebooks to download and export data to parquet tables are maintained. Old files for donwloading and importing to Postgres have been removed and moved to this `legacy` folder. This readme file contains old information for that previous version of the importer.
+
+
 # SemanticScholarImporter
 This repository provides code to save, import and process [SemanticScholar](https://www.semanticscholar.org/) dataset.
 
